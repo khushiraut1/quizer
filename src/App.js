@@ -50,7 +50,7 @@ function App() {
     }
     const timer = setInterval(() => {
       if (timeLeft > 0) {
-        setTimeLeft(timeLeft - 1);
+        setTimeLeft((prev) => prev - 1);
       }
     }, 1000);
 
@@ -59,31 +59,30 @@ function App() {
 
   // Handle the user's answer selection
   const handleAnswer = (selected) => {
-    if (selected !== null) {
-      setSelectedAnswer(selected);
-      const isCorrect = selected === questions[current].answer;
-      setHighlightedAnswer(isCorrect ? "correct" : "incorrect");
+    // Prevent multiple selections
+    if (selectedAnswer !== null) return;
 
-      if (isCorrect) {
-        setScore(score + 1);
-      }
+    setSelectedAnswer(selected);
+    const isCorrect = selected === questions[current].answer;
+    setHighlightedAnswer(isCorrect ? "correct" : "incorrect");
 
-      // Delay moving to the next question
-      setTimeout(() => {
-        const next = current + 1;
-        if (next < questions.length) {
-          setCurrent(next);
-          setTimeLeft(30); // Reset timer for next question
-          setSelectedAnswer(null); // Reset the selected answer for the next question
-          setHighlightedAnswer(null); // Reset the highlighted answer
-        } else {
-          setShowResult(true);
-        }
-      }, 1000); // Delay of 1 second
+    if (isCorrect) {
+      setScore((prev) => prev + 1);
     }
+
+    setTimeout(() => {
+      const next = current + 1;
+      if (next < questions.length) {
+        setCurrent(next);
+        setTimeLeft(30);
+        setSelectedAnswer(null);
+        setHighlightedAnswer(null);
+      } else {
+        setShowResult(true);
+      }
+    }, 1000);
   };
 
-  // Restart the quiz
   const restartQuiz = () => {
     setCurrent(0);
     setScore(0);
@@ -93,7 +92,6 @@ function App() {
     setSelectedAnswer(null);
   };
 
-  // If still loading, display loading screen
   if (loading) {
     return (
       <div className="app">
@@ -102,7 +100,6 @@ function App() {
     );
   }
 
-  // Check if questions exist before rendering the quiz
   if (!questions || questions.length === 0) {
     return <div className="app">No questions available. Please try again later.</div>;
   }
@@ -136,11 +133,12 @@ function App() {
                   selectedAnswer !== null
                     ? highlightedAnswer === "correct" && option === questions[current].answer
                       ? "correct"
-                      : highlightedAnswer === "incorrect" && option !== questions[current].answer
+                      : highlightedAnswer === "incorrect" && option === selectedAnswer
                       ? "incorrect"
                       : ""
                     : ""
                 }`}
+                disabled={selectedAnswer !== null}
               >
                 {option}
               </button>
@@ -150,7 +148,9 @@ function App() {
       ) : (
         <div className="result">
           <h2>Quiz Complete!</h2>
-          <p>Your Score: {score} / {questions.length}</p>
+          <p>
+            Your Score: {score} / {questions.length}
+          </p>
           <button onClick={restartQuiz}>Try Again</button>
         </div>
       )}
